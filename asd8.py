@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 from datetime import datetime
 import pandas as pd
-import time  # لاستيراد time لتأخير الوميض
+import time
 
 # شريط جانبي للإدارة
 st.sidebar.title("الإدارة")
@@ -48,9 +48,15 @@ if st.sidebar.button("استخراج التقرير"):
 st.title("Fire Detection Monitoring System")
 st.write(f"مرحباً بك في نظام اكتشاف الحريق")
 
-# تحميل نموذج YOLOv5 فقط عند تشغيل الكشف
+# تحميل النموذج من ملف محلي باستخدام torch.load
+model_path = 'best.pt'
+
 if "model" not in st.session_state:
-    st.session_state.model = torch.hub.load('ultralytics/yolov5', 'custom', path='https://github.com/msj78598/Fire-Detection/raw/main/best.pt')
+    try:
+        st.session_state.model = torch.load(model_path, map_location=torch.device('cpu'))
+        st.success("تم تحميل النموذج بنجاح!")
+    except Exception as e:
+        st.error(f"حدث خطأ أثناء تحميل النموذج: {e}")
 
 # إضافة مربع الإنذار الثابت في الأعلى
 alert_box = st.empty()
