@@ -1,7 +1,4 @@
 import streamlit as st
-import json
-import os
-import hashlib
 import torch
 import cv2
 from PIL import Image
@@ -21,28 +18,20 @@ end_date = st.sidebar.date_input("تاريخ النهاية")
 
 # زر لاستخراج التقرير
 if st.sidebar.button("استخراج التقرير"):
-    # التحقق من وجود اكتشافات
     if "fire_detections" in st.session_state and st.session_state.fire_detections:
-        # فلترة الاكتشافات بناءً على التاريخ المحدد
         filtered_detections = [
             detection for detection in st.session_state.fire_detections
             if start_date <= datetime.strptime(detection['time'], "%Y-%m-%d %H:%M:%S").date() <= end_date
         ]
 
-        # التحقق من وجود بيانات بعد الفلترة
         if filtered_detections:
-            # إنشاء DataFrame من البيانات المفلترة
             df = pd.DataFrame(filtered_detections)
-
-            # إضافة رابط الصورة إلى التقرير باستخدام Hyperlink في Excel
-            image_folder = "C:/asd8/"  # مسار المجلد الصحيح للصور
+            image_folder = "yolov5/runs/train/exp/images/"  # مسار مجلد الصور النسبي
             df['image_link'] = df['image'].apply(lambda x: f'=HYPERLINK("{image_folder}{x}", "عرض الصورة")')
 
-            # إنشاء ملف Excel
             excel_file = "fire_detections_report.xlsx"
             df.to_excel(excel_file, index=False)
 
-            # إتاحة تحميل التقرير
             with open(excel_file, "rb") as file:
                 st.sidebar.download_button(
                     label="تحميل التقرير",
@@ -61,7 +50,7 @@ st.write(f"مرحباً بك في نظام اكتشاف الحريق")
 
 # تحميل نموذج YOLOv5 فقط عند تشغيل الكشف
 if "model" not in st.session_state:
-    st.session_state.model = torch.hub.load('ultralytics/yolov5', 'custom', path='C:/asd8/yolov5/runs/train/exp/weights/best.pt')
+    st.session_state.model = torch.hub.load('ultralytics/yolov5', 'custom', path='https://github.com/msj78598/Fire-Detection/raw/main/best.pt')
 
 # إضافة مربع الإنذار الثابت في الأعلى
 alert_box = st.empty()
@@ -88,7 +77,7 @@ if start_detection:
     cap = cv2.VideoCapture(0)
 
     fire_classes = [0, 1, 2, 3, 4]  # الفئات التي تمثل الحريق
-    conf_threshold = 0.3  # تعديل عتبة الثقة إلى %
+    conf_threshold = 0.5  # تعديل عتبة الثقة إلى 50%
 
     # البدء في الحلقة
     while cap.isOpened():
@@ -145,9 +134,9 @@ if start_detection:
                 # تشغيل الإنذار اللوني مع وميض
                 for _ in range(10):
                     alert_box.markdown("<div style='background-color: red; color: white; text-align: center; font-size: 24px;'>🚨🔥 إنذار حريق 🔥🚨</div>", unsafe_allow_html=True)
-                    time.sleep(0.5)  # تعديل إلى time.sleep بدلاً من st.time.sleep
+                    time.sleep(0.5)
                     alert_box.markdown("<div style='background-color: green; color: white; text-align: center; font-size: 24px;'>الوضع آمن ✔️</div>", unsafe_allow_html=True)
-                    time.sleep(0.5)  # تعديل إلى time.sleep بدلاً من st.time.sleep
+                    time.sleep(0.5)
 
         # تحويل الصورة إلى RGB لعرضها في Streamlit
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
